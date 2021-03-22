@@ -1,26 +1,29 @@
 const mongoose = require('mongoose');
-const { Schema, model } = mongoose;
+const { Schema, model, SchemaTypes } = mongoose;
+const mongoosePaginate = require('mongoose-paginate-v2');
 
 const contactSchema = new Schema(
   {
     name: {
       type: String,
-      required: [true, 'this field is required'],
+      required: [true, 'Name is required'],
       unique: true,
     },
     email: {
       type: String,
-      required: [true, 'this field is required'],
+      required: [true, 'Email is required'],
       unique: true,
+      validate: {
+        validator: v => /\S+@\S+\.\S+/.test(v),
+        message: props => `${props.value} is not a valid email!`,
+      },
     },
     phone: {
       type: String,
-      required: [true, 'this field is required'],
+      required: [true, 'Phone is required'],
       unique: true,
       validate: {
-        validator: function (v) {
-          return /\(\d{3}\)\s\d{3}-\d{4}/.test(v);
-        },
+        validator: v => /\(\d{3}\)\s\d{3}-\d{4}/.test(v),
         message: props => `${props.value} is not a valid phone number!`,
       },
     },
@@ -29,18 +32,15 @@ const contactSchema = new Schema(
       default: 'free',
       enum: ['free', 'pro', 'premium'],
     },
-    password: {
-      type: String,
-      default: 'password',
-    },
-    token: {
-      type: String,
-      default: '',
+    owner: {
+      type: SchemaTypes.ObjectId,
+      ref: 'user',
     },
   },
   { versionKey: false },
 );
 
+contactSchema.plugin(mongoosePaginate);
 const Contact = model('contact', contactSchema);
 
 module.exports = Contact;
