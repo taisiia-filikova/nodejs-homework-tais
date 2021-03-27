@@ -1,4 +1,5 @@
-const Contacts=require('../model/contacts')
+const Contacts = require('../model/contacts')
+const {HttpCode}=require('../helpers/constants')
 
 const getAllContats= async (req, res, next) => {
   try {
@@ -42,11 +43,11 @@ const getContactByID = async (req, res, next) => {
 
 const createContact= async (req, res, next) => {
   try {
-    const userId = req.user.id
+    const userId = req.user.id;
     const contact = await Contacts.addContact({ ...req.body, owner: userId });
-    return res.status(201).json({
-      status: "success",
-      code: 201,
+    return res.status(HttpCode.CREATED).json({
+      status: 'success',
+      code: HttpCode.CREATED,
       data: {
         contact,
       },
@@ -60,7 +61,7 @@ const createContact= async (req, res, next) => {
     }
     next(e);
   }
-}
+};
 
 
 const removeContact= async (req, res, next) => {

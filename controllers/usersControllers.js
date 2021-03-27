@@ -3,11 +3,12 @@ const Users = require('../model/users');
 const fs = require('fs').promises
 const path=require('path')
 const{promisify}=require('util')
-const cloudinary=require('cloudinary').v2
+const cloudinary = require('cloudinary').v2
+const { nanoid } = require('nanoid')
 require('dotenv').config()
 
 const { HttpCode } = require('../helpers/constants');
-
+const EmailService = require('../services/email')
 const SECRET_KEY = process.env.JWT_SECRET;
 
 cloudinary.config({ 
@@ -31,7 +32,14 @@ const reg = async (req, res, next) => {
         message: 'Email is already use',
       })
     }
-    const newUser = await Users.create(req.body)
+    const verifyToken = nanoid()
+    const emailService = new EmailService(process.env.NODE_ENV)
+    await emailService.sendEmail(verifyToken, email)
+    const newUser = await Users.create({
+      ...req.body,
+      verify: false,
+      verifyToken,
+    })
     return res.status(HttpCode.CREATED).json({
       status: 'success',
       code: HttpCode.CREATED,
@@ -42,8 +50,14 @@ const reg = async (req, res, next) => {
         avatar:newUser.avatar
       },
     })
-  } catch (e) {
-    next(e)
+  }  catch (e) {
+    if (e.name === 'ValidationError' || e.name === 'MongoError') {
+      return next({
+        status: HttpCode.BAD_REQUEST,
+        message: e.message.replace(/"/g, ''),
+      });
+    }
+    next(e);
   }
 }
 
@@ -52,7 +66,7 @@ const login = async (req, res, next) => {
     const { email, password } = req.body
     const user = await Users.findByEmail(email)
     const isValidPassword = await user?.validPassword(password)
-    if (!user || !isValidPassword) {
+    if (!user || !isValidPassword || !user.verify) {
       return res.status(HttpCode.UNAUTHORIZED).json({
         status: 'error',
         code: HttpCode.UNAUTHORIZED,
@@ -143,10 +157,33 @@ const saveAvatarToCloud = async (req) => {
   return result
 }
 
+const verify = async (req, res, next) => {
+  try {
+    const user = await Users.findByVerifyToken(req.params.verifyToken)
+    if (user) {
+      await Users.updateVerifyToken(user.id, true, null)
+      return res.json({
+        status: 'success',
+        code: HttpCode.OK,
+        message: 'Verification successful!',
+      })
+    }
+    return res.status(HttpCode.BAD_REQUEST).json({
+      status: 'error',
+      code: HttpCode.BAD_REQUEST,
+      data: 'Bad request',
+      message: 'Link is not valid',
+    })
+  } catch (e) {
+    next(e)
+  }
+}
+
 module.exports = {
     reg,
     login,
     logout,
     getCurrentUser,
-    avatars
+    avatars,
+    verify
 }
