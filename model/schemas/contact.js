@@ -1,46 +1,53 @@
 const mongoose = require('mongoose');
-const { Schema, model, SchemaTypes } = mongoose;
+const { Subscription } = require('../../helpers/constants');
+const { Schema, model, SchemaTypes } = mongoose
 const mongoosePaginate = require('mongoose-paginate-v2');
-
-const contactSchema = new Schema(
-  {
+ 
+const contactSchema = new Schema({
     name: {
-      type: String,
-      required: [true, 'Name is required'],
-      unique: true,
+        type: String,
+        required: [true, 'Set name for contact'],
+        unique:true,
     },
     email: {
       type: String,
-      required: [true, 'Email is required'],
+      required: [true, 'Email required'],
       unique: true,
-      validate: {
-        validator: v => /\S+@\S+\.\S+/.test(v),
-        message: props => `${props.value} is not a valid email!`,
+      validate(value) {
+        const re = /\S+@\S+\.\S+/
+        return re.test(String(value).toLowerCase())
       },
     },
     phone: {
-      type: String,
-      required: [true, 'Phone is required'],
-      unique: true,
-      validate: {
-        validator: v => /\(\d{3}\)\s\d{3}-\d{4}/.test(v),
+        type: String,
+        required: [true, 'Set phone for contact'],
+        unique: true,
+        validate: {
+        validator: v => /^(\s*)?(\+)?([- _():=+]?\d[- _():=+]?){10,14}(\s*)?$/.test(v),
         message: props => `${props.value} is not a valid phone number!`,
       },
     },
     subscription: {
-      type: String,
-      default: 'free',
-      enum: ['free', 'pro', 'premium'],
+        type: String,
+        default: Subscription.FREE,
+        enum: {
+            values: [Subscription.FREE, Subscription.PREMIUM, Subscription.PRO],
+             message:"Not allowed subscription",
+        },
+       
     },
     owner: {
-      type: SchemaTypes.ObjectId,
-      ref: 'user',
+        type: SchemaTypes.ObjectId,
+        ref: 'user',
     },
-  },
-  { versionKey: false },
+
+},
+    {
+        versionKey: false,
+        timestamps:true
+    }
 );
-
+ 
 contactSchema.plugin(mongoosePaginate);
-const Contact = model('contact', contactSchema);
-
-module.exports = Contact;
+const Contact = model('contact', contactSchema)
+module.exports=Contact
