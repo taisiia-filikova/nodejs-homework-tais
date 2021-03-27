@@ -6,10 +6,11 @@ const upload = require('../../../helpers/upload')
 const {validateUploadAvatar} =require('./validation')
 const {accountLimiter} =require('../../../helpers/rateLimit')
 
-router.post('/register',accountLimiter,usersController.reg)
+router.post('/register',accountLimiter, usersController.reg)
 router.post('/login',usersController.login)
 router.post('/logout', guard, usersController.logout)
-router.get('/current',guard, usersController.getCurrentUser);
-router.patch('/avatars', [guard , upload.single('avatar'),validateUploadAvatar] , usersController.avatars)
+router.get('/current',guard, usersController.getCurrentUser)
+router.patch('/avatars', [guard , upload.single('avatar'), validateUploadAvatar] , usersController.avatars)
+router.get('/verify/:verifyToken', usersController.verify)
 
 module.exports = router
