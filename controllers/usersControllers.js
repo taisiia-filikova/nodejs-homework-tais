@@ -2,13 +2,13 @@ const jwt = require('jsonwebtoken');
 const Users = require('../model/users');
 const fs = require('fs').promises
 const path=require('path')
-const{promisify}=require('util')
+const{promisify} = require('util')
 const cloudinary = require('cloudinary').v2
 const { nanoid } = require('nanoid')
 require('dotenv').config()
 
 const { HttpCode } = require('../helpers/constants');
-const EmailService = require('../services/email')
+const EmailService = require('../services/email');
 const SECRET_KEY = process.env.JWT_SECRET;
 
 cloudinary.config({ 
